@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApplicationConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.config</a> &gt; <span class="el_source">ApplicationConfig.java</span></div><h1>ApplicationConfig.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.config;
+
+import com.josefy.nnpda.infrastructure.exceptions.NotFoundException;
+import com.josefy.nnpda.infrastructure.repository.IUserRepository;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import org.apache.catalina.User;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Collection;
+import java.util.List;
+
+@Configuration
+<span class="fc" id="L26">@RequiredArgsConstructor</span>
+public class ApplicationConfig {
+    private final IUserRepository userRepository;
+    @Bean
+    public UserDetailsService userDetailsService() {
+<span class="pc" id="L31">        return username -&gt; userRepository.findByUsername(username)</span>
+<span class="nc" id="L32">                .orElseThrow(() -&gt; NotFoundException.create(User.class));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

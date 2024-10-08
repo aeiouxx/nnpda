@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - AuthenticationControllerTest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>AuthenticationControllerTest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/com.josefy.nnpda.controller.html">com.josefy.nnpda.controller</a> &gt; AuthenticationControllerTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">6</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">0.806s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+<li>
+<a href="#tab1">Standard output</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">shouldLoginUser()</td>
+<td class="success">0.010s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">shouldRegisterUserSuccessfully()</td>
+<td class="success">0.033s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">shouldRejectBadRequestLogin()</td>
+<td class="success">0.037s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">shouldRejectBadRequestRegister()</td>
+<td class="success">0.009s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">shouldRejectInvalidCredentials()</td>
+<td class="success">0.012s</td>
+<td class="success">passed</td>
+</tr>
+<tr>
+<td class="success">shouldRejectRegistrationWhenUserOrEmailCollides()</td>
+<td class="success">0.705s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+<div id="tab1" class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>2024-10-08T00:04:10.865Z  INFO 2090 --- [    Test worker] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.josefy.nnpda.controller.AuthenticationControllerTest]: AuthenticationControllerTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2024-10-08T00:04:10.916Z  INFO 2090 --- [    Test worker] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.josefy.nnpda.Application for test class com.josefy.nnpda.controller.AuthenticationControllerTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2024-10-08T00:04:10.953Z  INFO 2090 --- [    Test worker] c.j.n.c.AuthenticationControllerTest     : Starting AuthenticationControllerTest using Java 21.0.4 with PID 2090 (started by runner in /home/runner/work/nnpda/nnpda)
+2024-10-08T00:04:10.954Z  INFO 2090 --- [    Test worker] c.j.n.c.AuthenticationControllerTest     : The following 1 profile is active: &quot;test&quot;
+2024-10-08T00:04:11.892Z  INFO 2090 --- [    Test worker] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4715a298, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@efd99f3, org.springframework.security.web.context.SecurityContextHolderFilter@70e62b40, org.springframework.security.web.header.HeaderWriterFilter@68fed1ff, org.springframework.web.filter.CorsFilter@51e10d61, org.springframework.security.web.authentication.logout.LogoutFilter@4771da0b, com.josefy.nnpda.infrastructure.security.JwtAuthenticationFilter@7c7e0c55, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@2c359ef0, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@32dac3a0, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@724661b1, org.springframework.security.web.session.SessionManagementFilter@b37eaa0, org.springframework.security.web.access.ExceptionTranslationFilter@32bf498, org.springframework.security.web.access.intercept.AuthorizationFilter@2390128e]
+2024-10-08T00:04:12.087Z  INFO 2090 --- [    Test worker] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2024-10-08T00:04:12.088Z  INFO 2090 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2024-10-08T00:04:12.090Z  INFO 2090 --- [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
+2024-10-08T00:04:12.114Z  INFO 2090 --- [    Test worker] c.j.n.c.AuthenticationControllerTest     : Started AuthenticationControllerTest in 1.194 seconds (process running for 10.736)
+2024-10-08T00:04:12.392Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Request to: /auth/register
+2024-10-08T00:04:12.393Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Servlet path: 
+2024-10-08T00:04:12.872Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Request to: /auth/register
+2024-10-08T00:04:12.873Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Servlet path: 
+2024-10-08T00:04:12.901Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Request to: /auth/login
+2024-10-08T00:04:12.902Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Servlet path: 
+2024-10-08T00:04:12.942Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Request to: /auth/login
+2024-10-08T00:04:12.942Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Servlet path: 
+2024-10-08T00:04:12.955Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Request to: /auth/register
+2024-10-08T00:04:12.955Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Servlet path: 
+2024-10-08T00:04:12.968Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Request to: /auth/login
+2024-10-08T00:04:12.968Z  INFO 2090 --- [    Test worker] c.j.n.i.s.JwtAuthenticationFilter        : Servlet path: 
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 8.7</a> at Oct 8, 2024, 12:04:13 AM</p>
+</div>
+</div>
+</body>
+</html>

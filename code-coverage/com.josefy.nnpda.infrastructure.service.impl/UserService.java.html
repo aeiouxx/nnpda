@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.infrastructure.service.impl</a> &gt; <span class="el_source">UserService.java</span></div><h1>UserService.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.infrastructure.service.impl;
+
+import com.josefy.nnpda.infrastructure.utils.Either;
+import com.josefy.nnpda.infrastructure.repository.IPasswordResetTokenRepository;
+import com.josefy.nnpda.infrastructure.repository.IUserRepository;
+import com.josefy.nnpda.infrastructure.service.IEmailService;
+import com.josefy.nnpda.infrastructure.service.IUserService;
+import com.josefy.nnpda.infrastructure.utils.Hashing;
+import com.josefy.nnpda.infrastructure.utils.Status;
+import com.josefy.nnpda.model.PasswordResetToken;
+import com.josefy.nnpda.model.User;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.Date;
+
+@Service
+<span class="fc" id="L25">@RequiredArgsConstructor</span>
+<span class="fc" id="L26">@Slf4j</span>
+public class UserService implements IUserService {
+    private final IUserRepository userRepository;
+    private final IPasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final IEmailService emailService;
+<span class="fc" id="L32">    private static Status USER_NOT_FOUND</span>
+            = new Status(&quot;User not found.&quot;, HttpStatus.NOT_FOUND);
+
+    @Override
+    public Either&lt;Status, User&gt; getById(Long id) {
+<span class="nc" id="L37">        return userRepository.findById(id)</span>
+<span class="nc" id="L38">                .map(Either::&lt;Status, User&gt;right)</span>
+<span class="nc" id="L39">                .orElse(Either.left(USER_NOT_FOUND));</span>
+    }
+
+    @Override
+    public Either&lt;Status, User&gt; getByUsername(String username) {
+<span class="nc" id="L44">        return userRepository.findByUsername(username)</span>
+<span class="nc" id="L45">                .map(Either::&lt;Status, User&gt;right)</span>
+<span class="nc" id="L46">                .orElse(Either.left(USER_NOT_FOUND));</span>
+    }
+
+    @Override
+    public Either&lt;Status, User&gt; getByEmail(String email) {
+<span class="nc" id="L51">        return userRepository.findByEmail(email)</span>
+<span class="nc" id="L52">                .map(Either::&lt;Status, User&gt;right)</span>
+<span class="nc" id="L53">                .orElse(Either.left(USER_NOT_FOUND));</span>
+    }
+
+    @Override
+    public Either&lt;Status, Void&gt; delete(User user) {
+<span class="nc" id="L58">        userRepository.delete(user);</span>
+<span class="nc" id="L59">        return Either.right(null);</span>
+    }
+
+    @Override
+    public Either&lt;Status, User&gt; save(User user) {
+<span class="nc" id="L64">        var username = user.getUsername();</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (userRepository.existsByUsername(username)) {</span>
+<span class="nc" id="L66">            var message = new Status(&quot;User '%s' already exists.&quot;.formatted(username),</span>
+                    HttpStatus.CONFLICT);
+<span class="nc" id="L68">            return Either.left(message);</span>
+        }
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (userRepository.existsByEmail(user.getEmail())) {</span>
+<span class="nc" id="L71">            var message = new Status(&quot;Email '%s' is already registered.&quot;.formatted(user.getEmail()),</span>
+                    HttpStatus.CONFLICT);
+<span class="nc" id="L73">            return Either.left(message);</span>
+        }
+
+<span class="nc" id="L76">        return Either.right(userRepository.save(user));</span>
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, Void&gt; requestPasswordReset(String username) {
+<span class="nc" id="L82">        User user = userRepository.findByUsername(username).orElse(null);</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L84">            return Either.left(USER_NOT_FOUND);</span>
+        }
+<span class="nc" id="L86">        var currentTime = new Date();</span>
+<span class="nc" id="L87">        var existingToken = passwordResetTokenRepository.findByUserUsername(username);</span>
+<span class="nc bnc" id="L88" title="All 4 branches missed.">        if (existingToken.isPresent() &amp;&amp; !existingToken.get().isExpired(currentTime)) {</span>
+             // Do nothing if token is still valid (could do other things also)
+<span class="nc" id="L90">            return Either.right(null);</span>
+        }
+<span class="nc" id="L92">        var data = generateNextTokenData(currentTime);</span>
+<span class="nc" id="L93">        var token = new PasswordResetToken(data.hash, data.expiration, user);</span>
+<span class="nc" id="L94">        log.info(&quot;Generated token '{}' for user '{}', email '{}'.&quot;, data.hash, user.getUsername(), user.getEmail());</span>
+<span class="nc" id="L95">        passwordResetTokenRepository.save(token);</span>
+<span class="nc" id="L96">        emailService.sendPasswordReset(user.getEmail(), data.text);</span>
+<span class="nc" id="L97">        return Either.right(null);</span>
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, Void&gt; resetPassword(String token, String password) {
+<span class="nc" id="L103">        var hash = Hashing.sha256(token);</span>
+<span class="nc" id="L104">        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenHash(hash).orElse(null);</span>
+<span class="nc bnc" id="L105" title="All 4 branches missed.">        if (resetToken == null || resetToken.isExpired(new Date())) {</span>
+<span class="nc" id="L106">            return Either.left(</span>
+                    new Status(&quot;Invalid or expired token.&quot;, HttpStatus.UNAUTHORIZED));
+        }
+<span class="nc" id="L109">        var user = resetToken.getUser();</span>
+<span class="nc" id="L110">        var newPassword = passwordEncoder.encode(password);</span>
+<span class="nc" id="L111">        user.setPassword(newPassword);</span>
+<span class="nc" id="L112">        userRepository.save(user);</span>
+<span class="nc" id="L113">        passwordResetTokenRepository.delete(resetToken);</span>
+<span class="nc" id="L114">        return Either.right(null);</span>
+    }
+    @Override
+    @Transactional
+    public Either&lt;Status, Void&gt; changePassword(String username, String oldPassword, String newPassword) {
+<span class="nc" id="L119">        var user = userRepository.findByUsername(username).orElse(null);</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (user == null) {</span>
+<span class="nc" id="L121">            return Either.left(USER_NOT_FOUND);</span>
+        }
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {</span>
+<span class="nc" id="L124">            return Either.left(new Status( &quot;Incorrect old password.&quot;,</span>
+                    HttpStatus.BAD_REQUEST));
+        }
+<span class="nc" id="L127">        var newHashedPassword = passwordEncoder.encode(newPassword);</span>
+<span class="nc" id="L128">        user.setPassword(newHashedPassword);</span>
+<span class="nc" id="L129">        userRepository.save(user);</span>
+<span class="nc" id="L130">        return Either.right(null);</span>
+    }
+<span class="nc" id="L132">    private record TokenData(String text, String hash, Date expiration) {}</span>
+    private TokenData generateNextTokenData(Date currentTime) {
+<span class="nc" id="L134">        var random = new SecureRandom();</span>
+<span class="nc" id="L135">        var bytes = new byte[64];</span>
+<span class="nc" id="L136">        random.nextBytes(bytes);</span>
+<span class="nc" id="L137">        var text = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);</span>
+<span class="nc" id="L138">        String hash = Hashing.sha256(text);</span>
+<span class="nc" id="L139">        var expiration = new Date(currentTime.getTime() + PasswordResetToken.EXPIRATION_MILLIS);</span>
+<span class="nc" id="L140">        return new TokenData(text, hash, expiration);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

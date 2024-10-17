@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SensorController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.controller</a> &gt; <span class="el_source">SensorController.java</span></div><h1>SensorController.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.controller;
+
+import com.josefy.nnpda.dto.sensor.SensorDto;
+import com.josefy.nnpda.dto.sensor.SensorWithDeviceDto;
+import com.josefy.nnpda.dto.sensor.SensorWithDeviceResponseDto;
+import com.josefy.nnpda.infrastructure.utils.Status;
+import com.josefy.nnpda.model.User;
+import com.josefy.nnpda.service.ISensorService;
+import com.josefy.nnpda.validation.SerialNumber;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.Serial;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+@Tag(name = &quot;Sensors&quot;, description = &quot;Manages operations concerning the registered sensors.&quot;)
+@Controller
+@RequestMapping(&quot;/sensors&quot;)
+<span class="fc" id="L32">@RequiredArgsConstructor</span>
+<span class="fc" id="L33">@Slf4j</span>
+public class SensorController {
+    private final ISensorService sensorService;
+
+    @GetMapping
+    @Operation(
+            summary = &quot;Get all sensors&quot;,
+            description = &quot;Returns all registered sensors&quot;,
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            content = @Content(schema = @Schema(implementation = SensorDto[].class))
+                    ),
+            }
+    )
+    public ResponseEntity&lt;?&gt; getAll(@AuthenticationPrincipal User user) {
+<span class="nc" id="L49">        var sensors = sensorService.findAll();</span>
+<span class="nc" id="L50">        return ResponseEntity.ok(</span>
+<span class="nc" id="L51">                StreamSupport.stream(sensors.spliterator(), false)</span>
+<span class="nc" id="L52">                        .map(SensorDto::fromEntity)</span>
+<span class="nc" id="L53">                        .collect(Collectors.toList())</span>
+        );
+    }
+
+    @GetMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Get sensor by serial number&quot;,
+            description = &quot;Returns sensor with specified serial number&quot;,
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            content = @Content(schema = @Schema(implementation = SensorDto.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;404&quot;,
+                            description = &quot;Sensor with specified serial number not found&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; getOne(
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L75">        var sensor = sensorService.findBySerialNumber(serialNumber);</span>
+<span class="nc" id="L76">        return sensor.fold(Status::toResponseEntity,</span>
+<span class="nc" id="L77">                success -&gt; ResponseEntity.ok(SensorDto.fromEntity(success)));</span>
+    }
+
+    @PostMapping
+    @Operation(
+            summary = &quot;Create sensor&quot;,
+            description = &quot;Creates a new sensor&quot;,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(schema = @Schema(implementation = SensorWithDeviceDto.class))
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;201&quot;,
+                            description = &quot;Sensor created&quot;,
+                            content = @Content(schema = @Schema(implementation = SensorWithDeviceResponseDto.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;400&quot;,
+                            description = &quot;Invalid sensor data&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; create(@RequestBody @Valid SensorWithDeviceDto sensorDto,
+                                    @AuthenticationPrincipal User user) {
+<span class="nc" id="L101">        return sensorService.create(sensorDto)</span>
+<span class="nc" id="L102">                .fold(Status::toResponseEntity,</span>
+<span class="nc" id="L103">                        success -&gt; ResponseEntity.status(201).body(</span>
+<span class="nc" id="L104">                                SensorWithDeviceResponseDto.fromEntity(success)</span>
+                        ));
+    }
+
+    @PutMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Update sensor&quot;,
+            description = &quot;Updates sensor with specified serial number&quot;,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(schema = @Schema(implementation = SensorWithDeviceDto.class))
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            description = &quot;Sensor updated&quot;,
+                            content = @Content(schema = @Schema(implementation = SensorWithDeviceResponseDto.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;400&quot;,
+                            description = &quot;Invalid sensor data&quot;
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;404&quot;,
+                            description = &quot;Sensor with specified serial number not found&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; update(
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @RequestBody @Valid SensorWithDeviceDto sensorDto,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L135">        return sensorService.update(serialNumber, sensorDto)</span>
+<span class="nc" id="L136">                .fold(Status::toResponseEntity,</span>
+<span class="nc" id="L137">                        success -&gt; ResponseEntity.ok(SensorWithDeviceResponseDto.fromEntity(success)));</span>
+    }
+
+    @DeleteMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Delete sensor&quot;,
+            description = &quot;Deletes sensor with specified serial number&quot;,
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            description = &quot;Sensor deleted&quot;
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;404&quot;,
+                            description = &quot;Sensor with specified serial number not found&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; delete(
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L158">        return sensorService.delete(serialNumber).fold(Status::toResponseEntity,ResponseEntity::ok);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

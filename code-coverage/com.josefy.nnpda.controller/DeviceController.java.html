@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeviceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.controller</a> &gt; <span class="el_source">DeviceController.java</span></div><h1>DeviceController.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.controller;
+
+import com.josefy.nnpda.dto.device.DeviceDto;
+import com.josefy.nnpda.dto.device.DeviceWithSensorSerialsDto;
+import com.josefy.nnpda.dto.device.DeviceWithSensorsDto;
+import com.josefy.nnpda.infrastructure.utils.Status;
+import com.josefy.nnpda.model.Device;
+import com.josefy.nnpda.model.User;
+import com.josefy.nnpda.service.IDeviceService;
+import com.josefy.nnpda.validation.SerialNumber;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.Response;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+@Tag(name = &quot;Devices&quot;, description = &quot;Manages operations concerning the registered devices.&quot;)
+@Controller
+@RequestMapping(&quot;/devices&quot;)
+<span class="fc" id="L35">@RequiredArgsConstructor</span>
+<span class="fc" id="L36">@Slf4j</span>
+public class DeviceController {
+    private final IDeviceService deviceService;
+    @GetMapping
+    @Operation(
+            summary = &quot;Get all devices&quot;,
+            description = &quot;Returns all registered devices&quot;,
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            description = &quot;List of devices, &quot; +
+                                    &quot;if `withSensors` is `true`, each device also includes information about its &quot; +
+                                    &quot;sensors.&quot;,
+                            content = @Content(
+                                    schema = @Schema(
+                                            type = &quot;array&quot;,
+                                            oneOf = {
+                                                    DeviceWithSensorsDto[].class,
+                                                    DeviceDto[].class
+                                            }
+                                    )
+                            )
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; getAll(
+            @Parameter(description = &quot;Include sensors in the response&quot;)
+            @RequestParam(defaultValue = &quot;false&quot;) boolean withSensors,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L65">        var devices = deviceService.findAll(withSensors);</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        final Function&lt;Device, ?&gt; mapping = withSensors</span>
+<span class="nc" id="L67">                ? DeviceWithSensorsDto::fromEntity</span>
+<span class="nc" id="L68">                : DeviceDto::fromEntity;</span>
+<span class="nc" id="L69">        return ResponseEntity.ok(StreamSupport.stream(devices.spliterator(), false)</span>
+<span class="nc" id="L70">                .map(mapping)</span>
+<span class="nc" id="L71">                .collect(Collectors.toList()));</span>
+    }
+
+    @GetMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Get a device by serial number&quot;,
+            description = &quot;Returns a device by its serial number&quot;,
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            description = &quot;Device data, &quot; +
+                                    &quot;if `withSensors` is `true`, device includes its sensors.&quot;,
+                            content = @Content(
+                                    schema = @Schema(
+                                            oneOf = {DeviceWithSensorsDto.class, DeviceDto.class}
+                                    )
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;404&quot;,
+                            description = &quot;Device not found&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; getOne(
+            @Parameter(description = &quot;Include sensors in the response&quot;)
+            @RequestParam(defaultValue = &quot;false&quot;) boolean withSensors,
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L100">        var device = deviceService.findBySerialNumber(serialNumber, withSensors);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        final Function&lt;Device, ?&gt; mapping = withSensors</span>
+<span class="nc" id="L102">                ? DeviceWithSensorsDto::fromEntity</span>
+<span class="nc" id="L103">                : DeviceDto::fromEntity;</span>
+<span class="nc" id="L104">        return device.fold(</span>
+                Status::toResponseEntity,
+<span class="nc" id="L106">                d -&gt; ResponseEntity.ok(mapping.apply(d)));</span>
+    }
+
+    @PostMapping
+    @Operation(
+            summary = &quot;Create a new device&quot;,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = &quot;Device data&quot;,
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = DeviceWithSensorSerialsDto.class))),
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;201&quot;,
+                            content = @Content(schema = @Schema(implementation = DeviceWithSensorsDto.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;404&quot;,
+                            description = &quot;Device not found&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; create(
+            @RequestBody @Valid DeviceWithSensorSerialsDto device,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L130">        return deviceService.create(device)</span>
+<span class="nc" id="L131">                .fold(Status::toResponseEntity,</span>
+<span class="nc" id="L132">                      success -&gt; ResponseEntity.status(201).body(DeviceWithSensorsDto.fromEntity(success)));</span>
+    }
+
+    @PutMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Update a device&quot;,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = &quot;Device data&quot;,
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = DeviceWithSensorSerialsDto.class))),
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            content = @Content(schema = @Schema(implementation = DeviceWithSensorsDto.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;404&quot;,
+                            description = &quot;Device not found&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; update(
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @RequestBody @Valid DeviceWithSensorSerialsDto device,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L157">        return deviceService.update(serialNumber, device)</span>
+<span class="nc" id="L158">                .fold(Status::toResponseEntity,</span>
+<span class="nc" id="L159">                      success -&gt; ResponseEntity.ok(DeviceWithSensorsDto.fromEntity(success)));</span>
+    }
+
+    @DeleteMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Delete a device&quot;,
+            responses = {
+                    @ApiResponse(
+                            responseCode = &quot;200&quot;,
+                            description = &quot;Device deleted&quot;
+                    ),
+                    @ApiResponse(
+                            responseCode = &quot;404&quot;,
+                            description = &quot;Device not found&quot;
+                    )
+            }
+    )
+    public ResponseEntity&lt;?&gt; delete(
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L179">        return deviceService.delete(serialNumber).fold(Status::toResponseEntity, ResponseEntity::ok);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

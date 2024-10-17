@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDeviceService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.service.impl</a> &gt; <span class="el_source">UserDeviceService.java</span></div><h1>UserDeviceService.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.service.impl;
+
+import com.josefy.nnpda.infrastructure.utils.Either;
+import com.josefy.nnpda.infrastructure.utils.Status;
+import com.josefy.nnpda.model.Device;
+import com.josefy.nnpda.model.User;
+import com.josefy.nnpda.model.UserDevice;
+import com.josefy.nnpda.repository.IDeviceRepository;
+import com.josefy.nnpda.repository.IUserDeviceRepository;
+import com.josefy.nnpda.service.IUserDeviceService;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+<span class="fc" id="L19">@RequiredArgsConstructor</span>
+public class UserDeviceService implements IUserDeviceService {
+    private final IDeviceRepository deviceRepository;
+    private final IUserDeviceRepository userDeviceRepository;
+
+    @Override
+    public List&lt;UserDevice&gt; findAllForUser(User user) {
+<span class="nc" id="L26">        return userDeviceRepository.findByUser(user);</span>
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, Void&gt; unassignDeviceFromUser(String serialNumber, User user) {
+<span class="nc" id="L32">        Device device = deviceRepository.findBySerialNumber(serialNumber).orElse(null);</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        if (device == null) {</span>
+<span class="nc" id="L34">            return Either.left(new Status(&quot;Device with serial number &quot; + serialNumber + &quot; does not exist.&quot;,</span>
+                    HttpStatus.NOT_FOUND));
+        }
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (userDeviceRepository.existsByUserAndSerialNumber(user, serialNumber)) {</span>
+<span class="nc" id="L38">            userDeviceRepository.unassignDeviceFromUser(user, serialNumber);</span>
+<span class="nc" id="L39">            return Either.right(null);</span>
+        } else {
+<span class="nc" id="L41">            return Either.left(new Status(&quot;Device with serial number &quot; + serialNumber + &quot; is not assigned to the user.&quot;,</span>
+                    HttpStatus.NOT_FOUND));
+        }
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, UserDevice&gt; assignDeviceToUser(String serialNumber, User user) {
+<span class="nc" id="L49">        Device device = deviceRepository.findBySerialNumber(serialNumber).orElse(null);</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (device == null) {</span>
+<span class="nc" id="L51">            return Either.left(new Status(&quot;Device with serial number &quot; + serialNumber + &quot; does not exist.&quot;,</span>
+                    HttpStatus.NOT_FOUND));
+        }
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (!userDeviceRepository.existsByUserAndSerialNumber(user, serialNumber)) {</span>
+<span class="nc" id="L55">            UserDevice userDevice = new UserDevice();</span>
+<span class="nc" id="L56">            userDevice.setUser(user);</span>
+<span class="nc" id="L57">            userDevice.setDevice(device);</span>
+<span class="nc" id="L58">            userDeviceRepository.save(userDevice);</span>
+<span class="nc" id="L59">            return Either.right(userDevice);</span>
+        } else {
+<span class="nc" id="L61">            return Either.left(new Status(&quot;Device with serial number &quot; + serialNumber + &quot; is already assigned to the user.&quot;,</span>
+                    HttpStatus.CONFLICT));
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

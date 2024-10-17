@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDeviceController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.controller</a> &gt; <span class="el_source">UserDeviceController.java</span></div><h1>UserDeviceController.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.controller;
+
+import com.josefy.nnpda.dto.device.DeviceDto;
+import com.josefy.nnpda.infrastructure.utils.Status;
+import com.josefy.nnpda.model.User;
+import com.josefy.nnpda.service.IUserDeviceService;
+import com.josefy.nnpda.validation.SerialNumber;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.Table;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Tag(name = &quot;User Devices&quot;, description = &quot;Manages operations concerning the user devices.&quot;)
+@Controller
+@RequestMapping(&quot;/{username}/devices&quot;)
+<span class="fc" id="L29">@RequiredArgsConstructor</span>
+public class UserDeviceController {
+    private final IUserDeviceService userDeviceService;
+
+    @PostMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Assign device to user&quot;,
+            description = &quot;Assign device to user by serial number.&quot;,
+            responses = {
+                    @ApiResponse(
+                            description = &quot;Device assigned to user successfully.&quot;,
+                            responseCode = &quot;201&quot;,
+                            content = @Content(schema = @Schema(implementation = DeviceDto.class))),
+                    @ApiResponse(
+                            description = &quot;Device assignment failed because of invalid authorization.&quot;,
+                            responseCode = &quot;403&quot;),
+                    @ApiResponse(
+                            description = &quot;Device assignment failed because of invalid device.&quot;,
+                            responseCode = &quot;404&quot;),
+                    @ApiResponse(
+                            description = &quot;Device assignment failed because of device already assigned.&quot;,
+                            responseCode = &quot;409&quot;)
+            }
+    )
+    public ResponseEntity&lt;?&gt; assignDeviceToUser(
+            @PathVariable String username,
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @AuthenticationPrincipal User user)
+    {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (!user.getUsername().equals(username)) {</span>
+<span class="nc" id="L59">            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();</span>
+        }
+<span class="nc" id="L61">        var result = userDeviceService.assignDeviceToUser(serialNumber, user);</span>
+<span class="nc" id="L62">        return result.fold(Status::toResponseEntity,</span>
+                success -&gt; {
+<span class="nc" id="L64">                    var response = DeviceDto.fromEntity(success.getDevice());</span>
+<span class="nc" id="L65">                    return ResponseEntity.status(HttpStatus.CREATED).body(response);</span>
+                });
+    }
+
+    @DeleteMapping(&quot;/{serialNumber}&quot;)
+    @Operation(
+            summary = &quot;Unassign device from user&quot;,
+            description = &quot;Unassign device from user by serial number.&quot;,
+            responses = {
+                    @ApiResponse(
+                            description = &quot;Device unassigned from user successfully.&quot;,
+                            responseCode = &quot;200&quot;),
+                    @ApiResponse(
+                            description = &quot;Device unassignment failed because of invalid authorization.&quot;,
+                            responseCode = &quot;403&quot;),
+                    @ApiResponse(
+                            description = &quot;Device unassignment failed because of invalid device.&quot;,
+                            responseCode = &quot;404&quot;),
+            }
+    )
+    public ResponseEntity&lt;?&gt; unassignDeviceFromUser(
+            @PathVariable String username,
+            @PathVariable @Valid @SerialNumber String serialNumber,
+            @AuthenticationPrincipal User user)
+    {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (!user.getUsername().equals(username)) {</span>
+<span class="nc" id="L91">            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();</span>
+        }
+<span class="nc" id="L93">        return userDeviceService.unassignDeviceFromUser(serialNumber, user)</span>
+<span class="nc" id="L94">                .fold(Status::toResponseEntity, ResponseEntity::ok);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

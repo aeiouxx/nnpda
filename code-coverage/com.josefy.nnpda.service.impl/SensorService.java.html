@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SensorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.service.impl</a> &gt; <span class="el_source">SensorService.java</span></div><h1>SensorService.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.service.impl;
+
+import com.josefy.nnpda.dto.sensor.SensorWithDeviceDto;
+import com.josefy.nnpda.infrastructure.utils.Either;
+import com.josefy.nnpda.infrastructure.utils.Status;
+import com.josefy.nnpda.model.Device;
+import com.josefy.nnpda.model.Sensor;
+import com.josefy.nnpda.repository.IDeviceRepository;
+import com.josefy.nnpda.repository.ISensorRepository;
+import com.josefy.nnpda.repository.ISensorRepositoryEager;
+import com.josefy.nnpda.service.ISensorService;
+import jakarta.transaction.Transactional;
+import jdk.jfr.Timespan;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+@Service
+<span class="fc" id="L19">@RequiredArgsConstructor</span>
+public class SensorService implements ISensorService {
+    private final ISensorRepository sensorRepository;
+    private final ISensorRepositoryEager sensorRepositoryEager;
+    private final IDeviceRepository deviceRepository;
+
+    @Override
+    public Iterable&lt;Sensor&gt; findAll() {
+<span class="nc" id="L27">        return sensorRepository.findAll();</span>
+    }
+
+    @Override
+    public Either&lt;Status, Sensor&gt; findById(long id) {
+<span class="nc" id="L32">        return sensorRepository.findById(id)</span>
+<span class="nc" id="L33">                .map(Either::&lt;Status, Sensor&gt;right)</span>
+<span class="nc" id="L34">                .orElseGet(() -&gt; Either.left(new Status(&quot;Sensor not found&quot;, HttpStatus.NOT_FOUND)));</span>
+    }
+
+    @Override
+    public Either&lt;Status, Sensor&gt; findBySerialNumber(String serialNumber) {
+<span class="nc" id="L39">        return sensorRepository.findBySerialNumber(serialNumber)</span>
+<span class="nc" id="L40">                .map(Either::&lt;Status, Sensor&gt;right)</span>
+<span class="nc" id="L41">                .orElseGet(() -&gt; Either.left(new Status(&quot;Sensor not found&quot;, HttpStatus.NOT_FOUND)));</span>
+    }
+
+    @Override
+    public Iterable&lt;Sensor&gt; findByName(String name) {
+<span class="nc" id="L46">        return sensorRepository.findByName(name);</span>
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, Sensor&gt; create(SensorWithDeviceDto request) {
+<span class="nc" id="L52">        var serialNumber = request.serialNumber();</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (sensorRepository.existsBySerialNumber(serialNumber)) {</span>
+<span class="nc" id="L54">            return Either.left(new Status(&quot;Sensor with serial number '%s' already exists&quot;.formatted(serialNumber), HttpStatus.CONFLICT));</span>
+        }
+<span class="nc" id="L56">        var sensor = new Sensor(request.name(), request.serialNumber());</span>
+<span class="nc" id="L57">        Device device = null;</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (request.deviceSerialNumber() != null) {</span>
+<span class="nc" id="L59">            device = deviceRepository.findBySerialNumber(request.deviceSerialNumber()).orElse(null);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (device == null) {</span>
+<span class="nc" id="L61">                return Either.left(new Status(&quot;Device with serial number '%s' not found&quot;.formatted(request.deviceSerialNumber()), HttpStatus.NOT_FOUND));</span>
+            }
+<span class="nc" id="L63">            sensor.setDevice(device);</span>
+<span class="nc" id="L64">            device.getSensors().add(sensor);</span>
+        }
+<span class="nc" id="L66">        var savedSensor = sensorRepository.save(sensor);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (device != null) {</span>
+<span class="nc" id="L68">            deviceRepository.save(device);</span>
+        }
+<span class="nc" id="L70">        return Either.right(savedSensor);</span>
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, Sensor&gt; update(String oldSerialNumber, SensorWithDeviceDto request) {
+<span class="nc" id="L76">        var sensor = sensorRepository.findBySerialNumber(oldSerialNumber).orElse(null);</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (sensor == null) {</span>
+<span class="nc" id="L78">            return Either.left(new Status(&quot;Sensor with serial number '%s' not found&quot;.formatted(oldSerialNumber), HttpStatus.NOT_FOUND));</span>
+        }
+<span class="nc" id="L80">        sensor.setName(request.name());</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (!oldSerialNumber.equals(request.serialNumber())) {</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (sensorRepository.existsBySerialNumber(request.serialNumber())) {</span>
+<span class="nc" id="L83">                return Either.left(new Status(&quot;Sensor with serial number '%s' already exists&quot;.formatted(request.serialNumber()), HttpStatus.CONFLICT));</span>
+            }
+<span class="nc" id="L85">            sensor.setSerialNumber(request.serialNumber());</span>
+        }
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (request.deviceSerialNumber() != null) {</span>
+<span class="nc" id="L88">            var device = deviceRepository.findBySerialNumber(request.deviceSerialNumber()).orElse(null);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (device == null) {</span>
+<span class="nc" id="L90">                return Either.left(new Status(&quot;Device with serial number '%s' not found&quot;.formatted(request.deviceSerialNumber()), HttpStatus.NOT_FOUND));</span>
+            }
+<span class="nc" id="L92">            var oldDevice = sensor.getDevice();</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (oldDevice != null) {</span>
+<span class="nc" id="L94">                oldDevice.getSensors().remove(sensor);</span>
+<span class="nc" id="L95">                deviceRepository.save(oldDevice);</span>
+            }
+<span class="nc" id="L97">            sensor.setDevice(device);</span>
+<span class="nc" id="L98">            device.getSensors().add(sensor);</span>
+<span class="nc" id="L99">            deviceRepository.save(device);</span>
+        }
+<span class="nc" id="L101">        return Either.right(sensorRepository.save(sensor));</span>
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, Void&gt; delete(long id) {
+<span class="nc" id="L107">        sensorRepository.deleteById(id);</span>
+<span class="nc" id="L108">        return Either.right(null);</span>
+    }
+
+    @Override
+    @Transactional
+    public Either&lt;Status, Void&gt; delete(String serialNumber) {
+<span class="nc" id="L114">        sensorRepository.deleteBySerialNumber(serialNumber);</span>
+<span class="nc" id="L115">        return Either.right(null);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

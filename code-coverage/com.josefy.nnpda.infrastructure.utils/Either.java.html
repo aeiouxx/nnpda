@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Either.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.infrastructure.utils</a> &gt; <span class="el_source">Either.java</span></div><h1>Either.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.infrastructure.utils;
+
+import java.util.function.Function;
+
+public sealed abstract class Either&lt;A, B&gt; permits Either.Left, Either.Right {
+    private Either() {}
+
+    public static final class Left&lt;A, B&gt; extends Either&lt;A, B&gt; {
+        private final A value;
+
+<span class="nc" id="L11">        public Left(A value) {</span>
+<span class="nc" id="L12">            this.value = value;</span>
+<span class="nc" id="L13">        }</span>
+        public A getValue() {
+<span class="nc" id="L15">            return value;</span>
+        }
+
+        @Override
+        public &lt;C&gt; C fold(Function&lt;? super A, ? extends C&gt; left,
+                          Function&lt;? super B, ? extends C&gt; right) {
+<span class="nc" id="L21">            return left.apply(value);</span>
+        }
+    }
+    public static final class Right&lt;A, B&gt; extends Either&lt;A, B&gt; {
+        private final B value;
+
+<span class="fc" id="L27">        public Right(B value) {</span>
+<span class="fc" id="L28">            this.value = value;</span>
+<span class="fc" id="L29">        }</span>
+        public B getValue() {
+<span class="nc" id="L31">            return value;</span>
+        }
+
+        @Override
+        public &lt;C&gt; C fold(Function&lt;? super A, ? extends C&gt; left,
+                          Function&lt;? super B, ? extends C&gt; right) {
+<span class="fc" id="L37">            return right.apply(value);</span>
+        }
+    }
+
+    public static &lt;A, B&gt; Either&lt;A, B&gt; left(A value) {
+<span class="nc" id="L42">        return new Left&lt;&gt;(value);</span>
+    }
+
+    public static &lt;A, B&gt; Either&lt;A, B&gt; right(B value) {
+<span class="fc" id="L46">        return new Right&lt;&gt;(value);</span>
+    }
+
+    public abstract &lt;C&gt; C fold(Function&lt;? super A, ? extends C&gt; left,
+                               Function&lt;? super B, ? extends C&gt; right);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">nnproject</a> &gt; <a href="index.source.html" class="el_package">com.josefy.nnpda.infrastructure.controller</a> &gt; <span class="el_source">UserController.java</span></div><h1>UserController.java</h1><pre class="source lang-java linenums">package com.josefy.nnpda.infrastructure.controller;
+
+import com.josefy.nnpda.infrastructure.dto.ChangePasswordRequest;
+import com.josefy.nnpda.infrastructure.dto.NewPasswordRequest;
+import com.josefy.nnpda.infrastructure.dto.ResetPasswordRequest;
+import com.josefy.nnpda.infrastructure.service.IAuthenticationService;
+import com.josefy.nnpda.infrastructure.service.IUserService;
+import com.josefy.nnpda.infrastructure.utils.Status;
+import com.josefy.nnpda.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.*;
+
+@Tag(name = &quot;User&quot;, description = &quot;Manages operations concerning user accounts.&quot;)
+@Controller
+@RequestMapping(&quot;user&quot;)
+<span class="fc" id="L29">@RequiredArgsConstructor</span>
+<span class="fc" id="L30">@Slf4j</span>
+public class UserController {
+    private final IUserService userService;
+    @Operation(
+            summary = &quot;Reset password for user&quot;,
+            description = &quot;Reset password for user with provided username.&quot;,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = &quot;Unique username&quot;,
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = ResetPasswordRequest.class))),
+            responses = {
+                    @ApiResponse(
+                            description = &quot;Password reset processed.&quot;,
+                            responseCode = &quot;200&quot;),
+                    @ApiResponse(
+                            description = &quot;Password reset failed because of invalid request format.&quot;,
+                            responseCode = &quot;400&quot;),
+                    // We don't respond with 404 on purpose,
+                    // so that our hypothetical attacker doesn't know if the user exists or not
+                    // (would make more sense if we accepted email instead of username)
+            }
+    )
+    @PostMapping(&quot;/password-reset-request&quot;)
+    public ResponseEntity&lt;?&gt; requestPasswordReset(@RequestBody @Valid ResetPasswordRequest request) {
+<span class="nc" id="L54">        return userService</span>
+<span class="nc" id="L55">                .requestPasswordReset(request.username())</span>
+<span class="nc" id="L56">                .fold(Status::toResponseEntity, ResponseEntity::ok);</span>
+    }
+
+    @Operation(
+            summary = &quot;Change password via token&quot;,
+            description = &quot;Change password for user with provided token.&quot;,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = &quot;New password&quot;,
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = NewPasswordRequest.class))),
+            responses = {
+                    @ApiResponse(
+                            description = &quot;Password changed.&quot;,
+                            responseCode = &quot;200&quot;),
+                    @ApiResponse(
+                            description = &quot;Password change failed because of invalid request format.&quot;,
+                            responseCode = &quot;400&quot;),
+                    @ApiResponse(
+                            description = &quot;Password change failed because of invalid token (non-existent or expired).&quot;,
+                            responseCode = &quot;401&quot;),
+            }
+    )
+    @PutMapping(&quot;/change-password-token&quot;)
+    public ResponseEntity&lt;?&gt; changePasswordViaToken(@RequestBody @Valid NewPasswordRequest request) {
+<span class="nc" id="L80">       return userService</span>
+<span class="nc" id="L81">               .resetPassword(request.token(), request.password())</span>
+<span class="nc" id="L82">               .fold(Status::toResponseEntity, ResponseEntity::ok);</span>
+    }
+
+    @Operation(
+            summary = &quot;Change password for current user&quot;,
+            description = &quot;Change password for currently authenticated user.&quot;,
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = &quot;New password&quot;,
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = ChangePasswordRequest.class))),
+            responses = {
+                    @ApiResponse(
+                            description = &quot;Password changed.&quot;,
+                            responseCode = &quot;200&quot;),
+                    @ApiResponse(
+                            description = &quot;Password change failed because of invalid request format.&quot;,
+                            responseCode = &quot;400&quot;),
+                    @ApiResponse(
+                            description = &quot;Password change failed because of incorrect old password.&quot;,
+                            responseCode = &quot;401&quot;),
+            }
+    )
+    @SecurityRequirement(name = &quot;bearerAuth&quot;)
+    @PutMapping(&quot;/me/change-password&quot;)
+    public ResponseEntity&lt;?&gt; changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @AuthenticationPrincipal User user) {
+<span class="nc" id="L109">    return userService</span>
+<span class="nc" id="L110">            .changePassword(user.getUsername(), request.oldPassword(), request.newPassword())</span>
+<span class="nc" id="L111">            .fold(Status::toResponseEntity, ResponseEntity::ok);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
